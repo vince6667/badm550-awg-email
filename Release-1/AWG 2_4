@@ -3,49 +3,51 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load the dataset
-file_path = "Yearly_Clicks_Data.xlsx"
-df = pd.read_excel(file_path)  # Update with the actual file path
-# Convert 'Date' column to datetime format
+# Read the data
+file_path = "/mnt/data/2023&2024_without_2023_nodate_files(in).csv"
+df = pd.read_csv(file_path)
+
+# Ensure 'Date' column is in datetime format
 df['Date'] = pd.to_datetime(df['Date'])
 
-# Extract year and month from the date
+# Extract year and month
 df['Year'] = df['Date'].dt.year
 df['Month'] = df['Date'].dt.month
 
-# Aggregate data by year for Unique Clicks and Total Clicks
-yearly_data = df.groupby('Year')[['Unique Clicks', 'Total Clicks']].sum().reset_index()
-
-# Aggregate data by year and month for Unique Clicks and Total Clicks
+# Aggregate data by year and month
 monthly_data = df.groupby(['Year', 'Month'])[['Unique Clicks', 'Total Clicks']].sum().reset_index()
 
-# Pivot the data to have separate columns for 2023 and 2024
+# Create pivot tables
 monthly_unique_clicks = monthly_data.pivot(index='Month', columns='Year', values='Unique Clicks').fillna(0)
 monthly_total_clicks = monthly_data.pivot(index='Month', columns='Year', values='Total Clicks').fillna(0)
 
-# Calculate the net change between 2023 and 2024
-monthly_unique_clicks['Net Change'] = monthly_unique_clicks[2024] - monthly_unique_clicks[2023]
-monthly_total_clicks['Net Change'] = monthly_total_clicks[2024] - monthly_total_clicks[2023]
+# Calculate the net change for 2024 compared to 2023
+if 2023 in monthly_unique_clicks.columns and 2024 in monthly_unique_clicks.columns:
+    monthly_unique_clicks['Net Change'] = monthly_unique_clicks[2024] - monthly_unique_clicks[2023]
+    monthly_total_clicks['Net Change'] = monthly_total_clicks[2024] - monthly_total_clicks[2023]
+else:
+    monthly_unique_clicks['Net Change'] = 0
+    monthly_total_clicks['Net Change'] = 0
 
-# Bar Chart for Unique Clicks (Blue and Orange)
+# Generate bar chart for Unique Clicks
 plt.figure(figsize=(8, 5))
-plt.bar(yearly_data["Year"], yearly_data["Unique Clicks"], color=["blue", "orange"])
-plt.xlabel("Year")
-plt.ylabel("Unique Clicks")
-plt.title("Unique Clicks in 2023 and 2024")
-plt.xticks(yearly_data["Year"])
+plt.bar(monthly_unique_clicks.index, monthly_unique_clicks['Net Change'], color="blue")
+plt.xlabel("Month")
+plt.ylabel("Net Change in Unique Clicks")
+plt.title("Net Change in Unique Clicks (2023 vs 2024)")
+plt.xticks(range(1, 13))
 plt.show()
 
-# Bar Chart for Total Clicks (Blue and Orange)
+# Generate bar chart for Total Clicks
 plt.figure(figsize=(8, 5))
-plt.bar(yearly_data["Year"], yearly_data["Total Clicks"], color=["blue", "orange"])
-plt.xlabel("Year")
-plt.ylabel("Total Clicks")
-plt.title("Total Clicks in 2023 and 2024")
-plt.xticks(yearly_data["Year"])
+plt.bar(monthly_total_clicks.index, monthly_total_clicks['Net Change'], color="orange")
+plt.xlabel("Month")
+plt.ylabel("Net Change in Total Clicks")
+plt.title("Net Change in Total Clicks (2023 vs 2024)")
+plt.xticks(range(1, 13))
 plt.show()
 
-# Heatmap of Net Change in Clicks (2023 vs 2024)
+# Generate heatmap for net change in clicks
 heatmap_data = pd.DataFrame({
     'Month': range(1, 13),
     'Net Change Unique Clicks': monthly_unique_clicks['Net Change'],
@@ -59,7 +61,7 @@ plt.xlabel("Month")
 plt.ylabel("Click Type")
 plt.show()
 
-# Cumulative Plot of Net Change in Clicks (2023 vs 2024)
+# Generate cumulative trend plot for net change
 months = monthly_unique_clicks.index.values
 plt.figure(figsize=(8, 5))
 plt.plot(months, np.cumsum(monthly_unique_clicks["Net Change"].values), marker="o", linestyle="-", label="Cumulative Unique Clicks")
